@@ -49,6 +49,8 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
         internal const string IDX14105 = "IDX14105: Header.Cty != null, assuming JWS. Cty: '{0}'.";
         internal const string IDX14106 = "IDX14106: Decoding token: '{0}' into header, payload and signature.";
         internal const string IDX14107 = "IDX14107: Token string does not match the token formats: JWE (header.encryptedKey.iv.ciphertext.tag) or JWS (header.payload.signature)";
+        internal const string IDX14108 = "IDX14108: Error found while parsing date time. The '{0}' claim has value '{1}' which is could not be parsed to an integer.";
+        internal const string IDX14109 = "IDX14109: Error found while parsing date time. The '{0}' claim has value '{1}' does not lie in the valid range.";
 
         // logging
         internal const string IDX14200 = "IDX14200: Creating raw signature using the signature credentials.";

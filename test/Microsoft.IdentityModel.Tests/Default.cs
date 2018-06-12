@@ -38,6 +38,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.IdentityModel.Tokens.Saml;
 using Microsoft.IdentityModel.Tokens.Saml2;
 using Microsoft.IdentityModel.Xml;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.IdentityModel.Tests
 {
@@ -365,6 +366,33 @@ namespace Microsoft.IdentityModel.Tests
         {
             get => "<OuterXml></OuterXml>";
         }
+#if !CrossVersionTokenValidation
+        public static JObject Payload
+        {
+            get => new JObject()
+            {
+                { JwtRegisteredClaimNames.Email, "Bob@contoso.com" },
+                { JwtRegisteredClaimNames.GivenName, "Bob" },
+                { JwtRegisteredClaimNames.Iss, Default.Issuer },
+                { JwtRegisteredClaimNames.Aud, Default.Audience },
+                { JwtRegisteredClaimNames.Nbf, EpochTime.GetIntDate(Default.NotBefore).ToString()},
+                { JwtRegisteredClaimNames.Exp, EpochTime.GetIntDate(Default.Expires).ToString() }
+            };
+        }
+
+        public static List<Claim> PayloadClaims
+        {
+           get => new List<Claim>()
+            {
+                new Claim(JwtRegisteredClaimNames.Email, "Bob@contoso.com" ),
+                new Claim(JwtRegisteredClaimNames.GivenName, "Bob" ),
+                new Claim(JwtRegisteredClaimNames.Iss, Default.Issuer ),
+                new Claim(JwtRegisteredClaimNames.Aud, Default.Audience ),
+                new Claim(JwtRegisteredClaimNames.Nbf, EpochTime.GetIntDate(Default.NotBefore).ToString()),
+                new Claim(JwtRegisteredClaimNames.Exp, EpochTime.GetIntDate(Default.Expires).ToString()),
+            };
+        }
+#endif
 
 #if !CrossVersionTokenValidation
         public static Reference Reference

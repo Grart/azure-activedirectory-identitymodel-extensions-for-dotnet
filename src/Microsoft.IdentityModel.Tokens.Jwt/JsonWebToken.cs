@@ -27,6 +27,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json.Linq;
@@ -183,7 +184,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
         /// Gets the 'value' of the 'iat' claim { iat, 'value' } converted to a <see cref="DateTime"/> assuming 'value' is seconds since UnixEpoch (UTC 1970-01-01T0:0:0Z).
         /// </summary>
         /// <remarks>If the 'exp' claim is not found, then <see cref="DateTime.MinValue"/> is returned.</remarks>
-        public DateTime IssuedAt => Payload.Value<DateTime?>(JwtRegisteredClaimNames.Iat) ?? DateTime.MinValue;
+        public DateTime IssuedAt => GetDateTime(JwtRegisteredClaimNames.Iat);
 
         /// <summary>
         /// Gets the 'value' of the 'issuer' claim { iss, 'value' }.
@@ -241,13 +242,13 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
         /// Gets the 'value' of the 'notbefore' claim { nbf, 'value' } converted to a <see cref="DateTime"/> assuming 'value' is seconds since UnixEpoch (UTC 1970-01-01T0:0:0Z).
         /// </summary>
         /// <remarks>If the 'notbefore' claim is not found, then <see cref="DateTime.MinValue"/> is returned.</remarks>
-        public override DateTime ValidFrom => Payload.Value<DateTime?>(JwtRegisteredClaimNames.Nbf) ?? DateTime.MinValue;
+        public override DateTime ValidFrom => GetDateTime(JwtRegisteredClaimNames.Nbf);
 
         /// <summary>
         /// Gets the 'value' of the 'exp' claim { exp, 'value' } converted to a <see cref="DateTime"/> assuming 'value' is seconds since UnixEpoch (UTC 1970-01-01T0:0:0Z).
         /// </summary>
         /// <remarks>If the 'exp' claim is not found, then <see cref="DateTime.MinValue"/> is returned.</remarks>
-        public override DateTime ValidTo => Payload.Value<DateTime?>(JwtRegisteredClaimNames.Exp) ?? DateTime.MinValue;
+        public override DateTime ValidTo => GetDateTime(JwtRegisteredClaimNames.Exp);
 
         /// <summary>
         /// Gets the 'value' of the 'x5t' claim { x5t, 'value' }.
@@ -390,6 +391,63 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
                 return JsonClaimValueTypes.JsonArray;
 
             return objType.ToString();
-        }     
+        }
+
+        /// <summary>
+        /// Gets the DateTime using the number of seconds from 1970-01-01T0:0:0Z (UTC)
+        /// </summary>
+        /// <param name="key">Claim in the payload that should map to an integer.</param>
+        /// <remarks>If the claim is not found, the function returns: DateTime.MinValue
+        /// </remarks>
+        /// <exception cref="SecurityTokenException">If an overflow exception is thrown by the runtime.</exception>
+        /// <returns>The DateTime representation of a claim.</returns>
+        private DateTime GetDateTime(string key)
+        {
+            JToken dateValue;
+            if (!Payload.TryGetValue(key, out dateValue))
+            {
+                return DateTime.MinValue;
+            }
+
+            if (dateValue.Type == JTokenType.Date)
+                return dateValue.ToObject<DateTime>();
+            // if there are multiple dates, take the first one.
+            try
+            {
+                long secondsAfterBaseTime;
+                IList<int> dateValues = null;
+                if (dateValue.Type == JTokenType.Array)
+                    dateValues = dateValue.ToObject<IList<int>>();
+                if (dateValues != null)
+                {
+                    if (dateValues.Count == 0)
+                    {
+                        return DateTime.MinValue;
+                    }
+                    else
+                    {
+                        dateValue = dateValues[0];
+                    }
+                }
+
+                // null converts to 0.
+                secondsAfterBaseTime = Convert.ToInt64(Math.Truncate(Convert.ToDouble(dateValue, CultureInfo.InvariantCulture)));
+                return EpochTime.DateTime(secondsAfterBaseTime);
+            }
+            catch (Exception ex)
+            {
+                if (ex is FormatException || ex is ArgumentException || ex is InvalidCastException)
+                {
+                    throw LogHelper.LogExceptionMessage(new SecurityTokenException(LogHelper.FormatInvariant(LogMessages.IDX14108, key, (dateValue ?? "<null>")), ex));
+                }
+
+                if (ex is OverflowException)
+                {
+                    throw LogHelper.LogExceptionMessage(new SecurityTokenException(LogHelper.FormatInvariant(LogMessages.IDX14109, key, (dateValue ?? "<null>")), ex));
+                }
+
+                throw;
+            }
+        }
     }
 }
