@@ -146,6 +146,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
             var tokenValidationResult = tokenHandler.ValidateToken(jwtString, tokenValidationParameters);
             var validatedToken = tokenValidationResult.SecurityToken as JsonWebToken;
             IdentityComparer.AreEqual(Default.Payload, validatedToken.Payload, context);
+            TestUtilities.AssertFailIfErrors(context);
         }
     }
 

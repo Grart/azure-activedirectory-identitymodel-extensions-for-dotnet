@@ -384,12 +384,12 @@ namespace Microsoft.IdentityModel.Tests
         {
            get => new List<Claim>()
             {
-                new Claim(JwtRegisteredClaimNames.Email, "Bob@contoso.com" ),
-                new Claim(JwtRegisteredClaimNames.GivenName, "Bob" ),
-                new Claim(JwtRegisteredClaimNames.Iss, Default.Issuer ),
-                new Claim(JwtRegisteredClaimNames.Aud, Default.Audience ),
-                new Claim(JwtRegisteredClaimNames.Nbf, EpochTime.GetIntDate(Default.NotBefore).ToString()),
-                new Claim(JwtRegisteredClaimNames.Exp, EpochTime.GetIntDate(Default.Expires).ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, "Bob@contoso.com", ClaimValueTypes.String, Issuer, Issuer),
+                new Claim(JwtRegisteredClaimNames.GivenName, "Bob", ClaimValueTypes.String, Issuer, Issuer),
+                new Claim(JwtRegisteredClaimNames.Iss, Default.Issuer, ClaimValueTypes.String, Issuer, Issuer),
+                new Claim(JwtRegisteredClaimNames.Aud, Default.Audience, ClaimValueTypes.String, Issuer, Issuer),
+                new Claim(JwtRegisteredClaimNames.Nbf, EpochTime.GetIntDate(Default.NotBefore).ToString(), ClaimValueTypes.String, Issuer, Issuer),
+                new Claim(JwtRegisteredClaimNames.Exp, EpochTime.GetIntDate(Default.Expires).ToString(), ClaimValueTypes.String, Issuer, Issuer),
             };
         }
 #endif

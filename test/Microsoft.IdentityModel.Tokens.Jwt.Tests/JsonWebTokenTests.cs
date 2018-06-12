@@ -25,16 +25,25 @@
 //
 //------------------------------------------------------------------------------
 
+using Microsoft.IdentityModel.Tests;
 using Xunit;
 
 namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
 {
     public class JsonWebTokenTests
     {
-        [Fact]
-        public void CreateJWSAsync()
-        {
 
+        // Test checks to make sure that the JsonWebToken payload is correctly converted to IEnumerable<Claim>.
+        [Fact]
+        public void GetClaimsFromJObject()
+        {
+            var context = new CompareContext();
+            var jsonWebTokenHandler = new JsonWebTokenHandler();
+            var jsonWebTokenString = jsonWebTokenHandler.CreateToken(Default.Payload, KeyingMaterial.JsonWebKeyRsa256SigningCredentials);
+            var jsonWebToken = new JsonWebToken(jsonWebTokenString);
+            var claims = jsonWebToken.Claims;
+            IdentityComparer.AreEqual(Default.PayloadClaims, claims, context);
+            TestUtilities.AssertFailIfErrors(context);
         }
     }
 }
