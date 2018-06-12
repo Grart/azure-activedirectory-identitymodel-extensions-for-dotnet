@@ -54,7 +54,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
             if (string.IsNullOrEmpty(jwtEncodedString))
                 throw new ArgumentNullException(nameof(jwtEncodedString));
 
-            int count = 0;
+            int count = 1;
             int next = -1;
             while ((next = jwtEncodedString.IndexOf('.', next + 1)) != -1)
             {
@@ -64,7 +64,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
             }
 
             // JWS or JWE
-            if (count == 2 || count == 5)
+            if (count == JwtConstants.JwsSegmentCount || count == JwtConstants.JweSegmentCount)
             {
                 var tokenParts = jwtEncodedString.Split('.');
                 Decode(tokenParts, jwtEncodedString);
