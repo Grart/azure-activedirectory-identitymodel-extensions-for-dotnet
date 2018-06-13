@@ -30,6 +30,7 @@ using Microsoft.IdentityModel.Tests;
 using Newtonsoft.Json.Linq;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt.Tests;
 using System.Security.Claims;
 using Xunit;
 
@@ -39,6 +40,22 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
 {
     public class JsonWebTokenHandlerTests
     {
+        [Theory, MemberData(nameof(SegmentTheoryData))]
+        public void SegmentCanRead(JwtTheoryData theoryData)
+        {
+            Assert.Equal(theoryData.CanRead, theoryData.TokenHandler.CanReadToken(theoryData.Token));
+        }
+
+        public static TheoryData<JwtTheoryData> SegmentTheoryData()
+        {
+            var theoryData = new TheoryData<JwtTheoryData>();
+
+            JwtTestData.InvalidRegExSegmentsData("IDX14110:", theoryData);
+            JwtTestData.InvalidNumberOfSegmentsData("IDX14110:", theoryData);
+
+            return theoryData;
+        }
+
         // Tests checks to make sure that the token string created by the JsonWebTokenHandler is consistent with the 
         // token string created by the JwtSecurityTokenHandler.
         [Theory, MemberData(nameof(CreateTokenTheoryData))]
@@ -101,30 +118,6 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
             }
         }
 
-        // Test checks to make sure that an access token can be successfully validated by the JsonWebTokenHandler.
-        // Also ensures that a non-standard claim can be successfully retrieved from the payload and validated.
-        [Fact]
-        public void ValidateToken()
-        {
-            IdentityModelEventSource.ShowPII = true;
-            TestUtilities.WriteHeader($"{this}.ValidateToken");
-
-            var tokenHandler = new JsonWebTokenHandler();
-            var accessToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IlJzYVNlY3VyaXR5S2V5XzIwNDgiLCJ0eXAiOiJKV1QifQ.eyJlbWFpbCI6IkJvYkBjb250b3NvLmNvbSIsImdpdmVuX25hbWUiOiJCb2IiLCJpc3MiOiJodHRwOi8vRGVmYXVsdC5Jc3N1ZXIuY29tIiwiYXVkIjoiaHR0cDovL0RlZmF1bHQuQXVkaWVuY2UuY29tIiwibmJmIjoiMTQ4OTc3NTYxNyIsImV4cCI6IjE2MTYwMDYwMTcifQ.GcIi6FGp1JS5VF70_ULa8g6GTRos9Y7rUZvPAo4hm10bBNfGhdd5uXgsJspiQzS8vwJQyPlq8a_BpL9TVKQyFIRQMnoZWe90htmNWszNYbd7zbLJZ9AuiDqDzqzomEmgcfkIrJ0VfbER57U46XPnUZQNng2XgMXrXmIKUqEph_vLGXYRQ4ndfwtRrR6BxQFd1PS1T5KpEoUTusI4VEsMcutzfXUygLDiRKIcnLFA0kQpeoHllO4Nb_Sxv63GCb0d1076FfSEYtyRxF4YSCz1In-ee5dwEK8Mw3nHscu-1hn0Fe98RBs-4OrUzI0WcV8mq9IIB3i-U-CqCJEP_hVCiA";
-            var tokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidAudience = "http://Default.Audience.com",
-                ValidIssuer = "http://Default.Issuer.com",
-                IssuerSigningKey = KeyingMaterial.JsonWebKeyRsa256SigningCredentials.Key,
-            };
-            var tokenValidationResult = tokenHandler.ValidateToken(accessToken, tokenValidationParameters);
-            var jsonWebToken = tokenValidationResult.SecurityToken as JsonWebToken;
-            var email = jsonWebToken.Payload.Value<string>(JwtRegisteredClaimNames.Email);
-
-            if (!email.Equals("Bob@contoso.com"))
-                throw new SecurityTokenException("Token does not contain the correct value for the 'email' claim.");
-        }
-
         // Test checks to make sure that the token payload retrieved from ValidateToken is the same as the payload
         // the token was initially created with. 
         [Fact]
@@ -147,6 +140,30 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
             var validatedToken = tokenValidationResult.SecurityToken as JsonWebToken;
             IdentityComparer.AreEqual(Default.Payload, validatedToken.Payload, context);
             TestUtilities.AssertFailIfErrors(context);
+        }
+
+        // Test checks to make sure that an access token can be successfully validated by the JsonWebTokenHandler.
+        // Also ensures that a non-standard claim can be successfully retrieved from the payload and validated.
+        [Fact]
+        public void ValidateToken()
+        {
+            IdentityModelEventSource.ShowPII = true;
+            TestUtilities.WriteHeader($"{this}.ValidateToken");
+
+            var tokenHandler = new JsonWebTokenHandler();
+            var accessToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IlJzYVNlY3VyaXR5S2V5XzIwNDgiLCJ0eXAiOiJKV1QifQ.eyJlbWFpbCI6IkJvYkBjb250b3NvLmNvbSIsImdpdmVuX25hbWUiOiJCb2IiLCJpc3MiOiJodHRwOi8vRGVmYXVsdC5Jc3N1ZXIuY29tIiwiYXVkIjoiaHR0cDovL0RlZmF1bHQuQXVkaWVuY2UuY29tIiwibmJmIjoiMTQ4OTc3NTYxNyIsImV4cCI6IjE2MTYwMDYwMTcifQ.GcIi6FGp1JS5VF70_ULa8g6GTRos9Y7rUZvPAo4hm10bBNfGhdd5uXgsJspiQzS8vwJQyPlq8a_BpL9TVKQyFIRQMnoZWe90htmNWszNYbd7zbLJZ9AuiDqDzqzomEmgcfkIrJ0VfbER57U46XPnUZQNng2XgMXrXmIKUqEph_vLGXYRQ4ndfwtRrR6BxQFd1PS1T5KpEoUTusI4VEsMcutzfXUygLDiRKIcnLFA0kQpeoHllO4Nb_Sxv63GCb0d1076FfSEYtyRxF4YSCz1In-ee5dwEK8Mw3nHscu-1hn0Fe98RBs-4OrUzI0WcV8mq9IIB3i-U-CqCJEP_hVCiA";
+            var tokenValidationParameters = new TokenValidationParameters()
+            {
+                ValidAudience = "http://Default.Audience.com",
+                ValidIssuer = "http://Default.Issuer.com",
+                IssuerSigningKey = KeyingMaterial.JsonWebKeyRsa256SigningCredentials.Key,
+            };
+            var tokenValidationResult = tokenHandler.ValidateToken(accessToken, tokenValidationParameters);
+            var jsonWebToken = tokenValidationResult.SecurityToken as JsonWebToken;
+            var email = jsonWebToken.Payload.Value<string>(JwtRegisteredClaimNames.Email);
+
+            if (!email.Equals("Bob@contoso.com"))
+                throw new SecurityTokenException("Token does not contain the correct value for the 'email' claim.");
         }
     }
 
