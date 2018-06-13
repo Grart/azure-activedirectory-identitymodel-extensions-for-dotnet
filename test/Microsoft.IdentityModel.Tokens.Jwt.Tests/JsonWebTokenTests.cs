@@ -26,6 +26,7 @@
 //------------------------------------------------------------------------------
 
 using Microsoft.IdentityModel.Tests;
+using System.IdentityModel.Tokens.Jwt;
 using Xunit;
 
 namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
@@ -43,6 +44,20 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
             var jsonWebToken = new JsonWebToken(jsonWebTokenString);
             var claims = jsonWebToken.Claims;
             IdentityComparer.AreEqual(Default.PayloadClaims, claims, context);
+            TestUtilities.AssertFailIfErrors(context);
+        }
+
+        // Test checks to make sure that the 'Audiences' claim can be successfully retrieved when multiple audiences are present.
+        // It also checks that the rest of the claims match up as well
+        [Fact]
+        public void GetMultipleAudiences()
+        {
+            var context = new CompareContext();
+            var tokenString = "eyJhbGciOiJSUzI1NiJ9.eyJhdWQiOlsiaHR0cDovL0RlZmF1bHQuQXVkaWVuY2UuY29tIiwiaHR0cDovL0RlZmF1bHQuQXVkaWVuY2UxLmNvbSIsImh0dHA6Ly9EZWZhdWx0LkF1ZGllbmNlMi5jb20iLCJodHRwOi8vRGVmYXVsdC5BdWRpZW5jZTMuY29tIiwiaHR0cDovL0RlZmF1bHQuQXVkaWVuY2U0LmNvbSJdLCJleHAiOjE1Mjg4NTAyNzgsImlhdCI6MTUyODg1MDI3OCwiaXNzIjoiaHR0cDovL0RlZmF1bHQuSXNzdWVyLmNvbSIsIm5vbmNlIjoiRGVmYXVsdC5Ob25jZSIsInN1YiI6InVybjpvYXNpczpuYW1zOnRjOlNBTUw6MS4xOm5hbWVpZC1mb3JtYXQ6WDUwOVN1YmplY3ROYW1lIn0.";
+            var jsonWebToken = new JsonWebToken(tokenString);
+            var jwtSecurityToken = new JwtSecurityToken(tokenString);
+            IdentityComparer.AreEqual(jsonWebToken.Claims, jwtSecurityToken.Claims);
+            IdentityComparer.AreEqual(jsonWebToken.Audiences, jwtSecurityToken.Audiences, context);
             TestUtilities.AssertFailIfErrors(context);
         }
     }

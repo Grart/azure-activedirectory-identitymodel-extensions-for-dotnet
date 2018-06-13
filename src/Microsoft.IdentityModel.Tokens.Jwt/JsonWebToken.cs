@@ -108,12 +108,11 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
                 if (Payload != null)
                 {
                     var value = Payload.GetValue(JwtRegisteredClaimNames.Aud);
-                    var stringValue = value.ToObject<string>();
-                    if (stringValue != null)
-                        return new List<string> { stringValue };
-                    var listValue = value as IEnumerable<string>;
-                    if (listValue != null)
-                        return listValue;
+
+                    if (value.Type is JTokenType.String)
+                        return new List<string> { value.ToObject<string>() };
+                    else if (value.Type is JTokenType.Array)
+                        return value.ToObject<List<string>>();
                 }
 
                 return new List<string>();
@@ -131,25 +130,25 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
                 string issuer = this.Issuer ?? ClaimsIdentity.DefaultIssuer;
 
                 // there is some code redundancy here that was not factored as this is a high use method. Each identity received from the host will pass through here.
-                foreach (var jProperty in Payload)
+                foreach (var jObject in Payload)
                 {
-                    if (jProperty.Value == null)
+                    if (jObject.Value == null)
                     {
-                        claims.Add(new Claim(jProperty.Key, string.Empty, JsonClaimValueTypes.JsonNull, issuer, issuer));
+                        claims.Add(new Claim(jObject.Key, string.Empty, JsonClaimValueTypes.JsonNull, issuer, issuer));
                         continue;
                     }
 
-                    var claimValue = jProperty.Value.ToObject<string>();
-                    if (jProperty.Value.Type.Equals(typeof(string)))
+                    if (jObject.Value.Type is JTokenType.String)
                     {
-                        claims.Add(new Claim(jProperty.Key, claimValue, ClaimValueTypes.String, issuer, issuer));
+                        var claimValue = jObject.Value.ToObject<string>();
+                        claims.Add(new Claim(jObject.Key, claimValue, ClaimValueTypes.String, issuer, issuer));
                         continue;
                     }
 
-                    var jtoken = jProperty.Value;
+                    var jtoken = jObject.Value;
                     if (jtoken != null)
                     {
-                        AddClaimsFromJToken(claims, jProperty.Key, jtoken, issuer);
+                        AddClaimsFromJToken(claims, jObject.Key, jtoken, issuer);
                         continue;
                     }
 
@@ -285,11 +284,11 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
 
         private void AddClaimsFromJToken(List<Claim> claims, string claimType, JToken jtoken, string issuer)
         {
-            if (jtoken.Type == JTokenType.Object)
+            if (jtoken.Type is JTokenType.Object)
             {
                 claims.Add(new Claim(claimType, jtoken.ToString(Newtonsoft.Json.Formatting.None), JsonClaimValueTypes.Json, issuer, issuer));
             }
-            else if (jtoken.Type == JTokenType.Array)
+            else if (jtoken.Type is JTokenType.Array)
             {
                 var jarray = jtoken as JArray;
                 foreach (var item in jarray)
@@ -324,7 +323,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
             {
                 // String is special because item.ToString(Formatting.None) will result in "/"string/"". The quotes will be added.
                 // Boolean needs item.ToString otherwise 'true' => 'True'
-                if (jvalue.Type == JTokenType.String)
+                if (jvalue.Type is JTokenType.String)
                     claims.Add(new Claim(claimType, jvalue.Value.ToString(), ClaimValueTypes.String, issuer, issuer));
                 else
                     claims.Add(new Claim(claimType, jtoken.ToString(Newtonsoft.Json.Formatting.None), GetClaimValueType(jvalue.Value), issuer, issuer));
