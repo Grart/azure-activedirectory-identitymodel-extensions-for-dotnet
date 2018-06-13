@@ -406,8 +406,6 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
                 return DateTime.MinValue;
             }
 
-            if (dateValue.Type == JTokenType.Date)
-                return dateValue.ToObject<DateTime>();
             // if there are multiple dates, take the first one.
             try
             {
