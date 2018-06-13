@@ -35,7 +35,7 @@ using Newtonsoft.Json.Linq;
 namespace Microsoft.IdentityModel.Tokens.Jwt
 {
     /// <summary>
-    /// A <see cref="SecurityToken"/> designed for representing a JSON Web Token (JWT).
+    /// A <see cref="SecurityToken"/> designed for representing a JSON Web Token (JWT). Currently only supports tokens in JWS format (JWE support is to be added in later).
     /// </summary>
     public class JsonWebToken : SecurityToken
     {
@@ -59,12 +59,12 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
             while ((next = jwtEncodedString.IndexOf('.', next + 1)) != -1)
             {
                 count++;
-                if (count > 5)
+                if (count > 2)
                     break;
             }
 
             // JWS or JWE
-            if (count == JwtConstants.JwsSegmentCount || count == JwtConstants.JweSegmentCount)
+            if (count == JwtConstants.JwsSegmentCount)
             {
                 var tokenParts = jwtEncodedString.Split('.');
                 Decode(tokenParts, jwtEncodedString);
@@ -75,8 +75,8 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonWebToken"/> class where the header contains the crypto algorithms applied to the encoded header and payload. The jwtEncodedString is the result of those operations.
         /// </summary>
-        /// <param name="header">Contains JSON objects representing the cryptographic operations applied to the JWT and optionally any additional properties of the JWT</param>
-        /// <param name="payload">Contains JSON objects representing the claims contained in the JWT. Each claim is a JSON object of the form { Name, Value }</param>
+        /// <param name="header">Contains JSON objects representing the cryptographic operations applied to the JWT and optionally any additional properties of the JWT.</param>
+        /// <param name="payload">Contains JSON objects representing the claims contained in the JWT. Each claim is a JSON object of the form { Name, Value }.</param>
         /// <exception cref="ArgumentNullException">'header' is null.</exception>
         /// <exception cref="ArgumentNullException">'payload' is null.</exception>
         public JsonWebToken(JObject header, JObject payload)
@@ -279,9 +279,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
             else
                 Header = header;
            
-            if (tokenParts.Length == JwtConstants.JwsSegmentCount)
-                DecodeJws(tokenParts);
-                
+            DecodeJws(tokenParts); 
             EncodedToken = rawData;
         }
 
