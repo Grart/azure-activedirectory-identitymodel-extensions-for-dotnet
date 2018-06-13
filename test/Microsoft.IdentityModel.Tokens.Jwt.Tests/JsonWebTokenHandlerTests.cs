@@ -61,7 +61,6 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
         [Theory, MemberData(nameof(CreateTokenTheoryData))]
         public void CreateToken(CreateTokenTheoryData theoryData)
         {
-            IdentityModelEventSource.ShowPII = true;
             var context = TestUtilities.WriteHeader($"{this}.CreateToken", theoryData);
             try
             {
@@ -123,7 +122,6 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
         [Fact]
         public void RoundTripToken()
         {
-            IdentityModelEventSource.ShowPII = true;
             TestUtilities.WriteHeader($"{this}.RoundTripToken");
             var context = new CompareContext();
 
@@ -147,7 +145,6 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
         [Fact]
         public void ValidateToken()
         {
-            IdentityModelEventSource.ShowPII = true;
             TestUtilities.WriteHeader($"{this}.ValidateToken");
 
             var tokenHandler = new JsonWebTokenHandler();

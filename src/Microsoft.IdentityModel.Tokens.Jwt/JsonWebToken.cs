@@ -393,56 +393,45 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
         /// <summary>
         /// Gets the DateTime using the number of seconds from 1970-01-01T0:0:0Z (UTC)
         /// </summary>
-        /// <param name="key">Claim in the payload that should map to an integer.</param>
+        /// <param name="key">Claim in the payload that should map to an integer, float, or string.</param>
         /// <remarks>If the claim is not found, the function returns: DateTime.MinValue
         /// </remarks>
-        /// <exception cref="SecurityTokenException">If an overflow exception is thrown by the runtime.</exception>
+        /// <exception cref="FormatException">If the value of the claim cannot be parsed into a long.</exception>
         /// <returns>The DateTime representation of a claim.</returns>
         private DateTime GetDateTime(string key)
         {
-            JToken dateValue;
-            if (!Payload.TryGetValue(key, out dateValue))
+            JToken jToken;
+            if (!Payload.TryGetValue(key, out jToken))
             {
                 return DateTime.MinValue;
             }
 
-            // if there are multiple dates, take the first one.
-            try
-            {
-                long secondsAfterBaseTime;
-                IList<int> dateValues = null;
-                if (dateValue.Type == JTokenType.Array)
-                    dateValues = dateValue.ToObject<IList<int>>();
-                if (dateValues != null)
-                {
-                    if (dateValues.Count == 0)
-                    {
-                        return DateTime.MinValue;
-                    }
-                    else
-                    {
-                        dateValue = dateValues[0];
-                    }
-                }
+            long dateValue = ParseTimeValue(jToken, key);
 
-                // null converts to 0.
-                secondsAfterBaseTime = Convert.ToInt64(Math.Truncate(Convert.ToDouble(dateValue, CultureInfo.InvariantCulture)));
-                return EpochTime.DateTime(secondsAfterBaseTime);
-            }
-            catch (Exception ex)
-            {
-                if (ex is FormatException || ex is ArgumentException || ex is InvalidCastException)
-                {
-                    throw LogHelper.LogExceptionMessage(new SecurityTokenException(LogHelper.FormatInvariant(LogMessages.IDX14108, key, (dateValue ?? "<null>")), ex));
-                }
-
-                if (ex is OverflowException)
-                {
-                    throw LogHelper.LogExceptionMessage(new SecurityTokenException(LogHelper.FormatInvariant(LogMessages.IDX14109, key, (dateValue ?? "<null>")), ex));
-                }
-
-                throw;
-            }
+            var secondsAfterBaseTime = Convert.ToInt64(Math.Truncate(Convert.ToDouble(dateValue, CultureInfo.InvariantCulture)));
+            return EpochTime.DateTime(secondsAfterBaseTime);
         }
+
+        private long ParseTimeValue(JToken jToken, string claimName)
+        {
+            if (jToken.Type == JTokenType.Integer || jToken.Type == JTokenType.Float)
+            {
+                return (long)jToken;
+            }
+            else if (jToken.Type == JTokenType.String)
+            {
+                if (long.TryParse((string)jToken, out long resultLong))
+                    return resultLong;
+
+                if (float.TryParse((string)jToken, out float resultFloat))
+                    return (long)resultFloat;
+
+                if (double.TryParse((string)jToken, out double resultDouble))
+                    return (long)resultDouble;
+            }
+
+            throw LogHelper.LogExceptionMessage(new FormatException(LogHelper.FormatInvariant(LogMessages.IDX14300, claimName, jToken.ToString(), typeof(long))));
+        }
+
     }
 }

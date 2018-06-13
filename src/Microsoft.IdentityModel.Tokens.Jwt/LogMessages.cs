@@ -55,6 +55,9 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
 
         // logging
         internal const string IDX14200 = "IDX14200: Creating raw signature using the signature credentials.";
+
+        // parsing
+        internal const string IDX14300 = "IDX14300: Could not parse '{0}' : '{1}' as a '{2}'.";
 #pragma warning restore 1591
     }
 }

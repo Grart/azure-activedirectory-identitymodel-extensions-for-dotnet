@@ -26,8 +26,12 @@
 //------------------------------------------------------------------------------
 
 using Microsoft.IdentityModel.Tests;
+using Newtonsoft.Json.Linq;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using Xunit;
+
+#pragma warning disable CS3016 // Arrays as attribute arguments is not CLS-compliant
 
 namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
 {
@@ -61,12 +65,92 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
             TestUtilities.AssertFailIfErrors(context);
         }
 
-        // Time values can be floats, ints, strings, or lists of the previous three types.
+        // Time values can be floats, ints, or strings.
         // This test checks to make sure that parsing does not fault in any of the above cases.
-        [Fact]
-        public void ParseTimeValues()
+        [Theory, MemberData(nameof(ParseTimeValuesTheoryData))]
+        public void ParseTimeValues(ParseTimeValuesTheoryData theoryData)
         {
-
+            var context = TestUtilities.WriteHeader($"{this}.ParseTimeValues", theoryData);
+            var jsonWebTokenHandler = new JsonWebTokenHandler();
+            try
+            {
+                var token = new JsonWebToken(theoryData.Header, theoryData.Payload);
+                var validFrom = token.ValidFrom;
+                var validTo = token.ValidTo;
+            }
+            catch (Exception ex)
+            {
+                theoryData.ExpectedException.ProcessException(ex, context);
+            }
         }
+
+        public static TheoryData<ParseTimeValuesTheoryData> ParseTimeValuesTheoryData
+        {
+            get
+            {
+                return new TheoryData<ParseTimeValuesTheoryData>
+                {
+                    // Dates as strings
+                    new ParseTimeValuesTheoryData
+                    {
+                        First = true,
+                        Payload = Default.Payload,
+                        Header = new JObject
+                        {
+                            { JwtHeaderParameterNames.Alg, SecurityAlgorithms.Sha512  },
+                            { JwtHeaderParameterNames.Kid, Default.AsymmetricSigningKey.KeyId },
+                            { JwtHeaderParameterNames.Typ, JwtConstants.HeaderType }
+                        }
+                    },
+                    // Dates as longs
+                    new ParseTimeValuesTheoryData
+                    {
+                        First = true,
+                        Payload = new JObject()
+                        {       
+                            { JwtRegisteredClaimNames.Email, "Bob@contoso.com" },
+                            { JwtRegisteredClaimNames.GivenName, "Bob" },
+                            { JwtRegisteredClaimNames.Iss, Default.Issuer },
+                            { JwtRegisteredClaimNames.Aud, Default.Audience },
+                            { JwtRegisteredClaimNames.Nbf, EpochTime.GetIntDate(Default.NotBefore)},
+                            { JwtRegisteredClaimNames.Exp, EpochTime.GetIntDate(Default.Expires) }
+                        },
+                        Header = new JObject
+                        {
+                            { JwtHeaderParameterNames.Alg, SecurityAlgorithms.Sha512  },
+                            { JwtHeaderParameterNames.Kid, Default.AsymmetricSigningKey.KeyId },
+                            { JwtHeaderParameterNames.Typ, JwtConstants.HeaderType }
+                        }
+                    },
+                    // Dates as integers
+                    new ParseTimeValuesTheoryData
+                    {
+                        First = true,
+                        Payload = new JObject()
+                        {
+                            { JwtRegisteredClaimNames.Email, "Bob@contoso.com" },
+                            { JwtRegisteredClaimNames.GivenName, "Bob" },
+                            { JwtRegisteredClaimNames.Iss, Default.Issuer },
+                            { JwtRegisteredClaimNames.Aud, Default.Audience },
+                            { JwtRegisteredClaimNames.Nbf, (int) EpochTime.GetIntDate(Default.NotBefore)},
+                            { JwtRegisteredClaimNames.Exp, (int) EpochTime.GetIntDate(Default.Expires) }
+                        },
+                        Header = new JObject
+                        {
+                            { JwtHeaderParameterNames.Alg, SecurityAlgorithms.Sha512  },
+                            { JwtHeaderParameterNames.Kid, Default.AsymmetricSigningKey.KeyId },
+                            { JwtHeaderParameterNames.Typ, JwtConstants.HeaderType }
+                        }
+                    },
+                };
+            }
+        }
+    }
+
+    public class ParseTimeValuesTheoryData : TheoryDataBase
+    {
+        public JObject Payload { get; set; }
+
+        public JObject Header { get; set; }
     }
 }
