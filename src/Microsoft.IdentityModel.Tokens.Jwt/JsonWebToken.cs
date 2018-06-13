@@ -35,7 +35,8 @@ using Newtonsoft.Json.Linq;
 namespace Microsoft.IdentityModel.Tokens.Jwt
 {
     /// <summary>
-    /// A <see cref="SecurityToken"/> designed for representing a JSON Web Token (JWT). Currently only supports tokens in JWS format (JWE support is to be added in later).
+    /// A <see cref="SecurityToken"/> designed for representing a JSON Web Token (JWT). 
+    /// Currently only supports tokens in JWS format (JWE support is to be added in later).
     /// </summary>
     public class JsonWebToken : SecurityToken
     {
@@ -43,8 +44,7 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
         /// Initializes a new instance of <see cref="JsonWebToken"/> from a string in JWS Compact serialized format.
         /// </summary>
         /// <param name="jwtEncodedString">A JSON Web Token that has been serialized in JWS Compact serialized format.</param>
-        /// <exception cref="ArgumentNullException">'jwtEncodedString' is null.</exception>
-        /// <exception cref="ArgumentException">'jwtEncodedString' contains only whitespace.</exception>
+        /// <exception cref="ArgumentNullException">'jwtEncodedString' is null or empty.</exception>
         /// <exception cref="ArgumentException">'jwtEncodedString' is not in JWS Compact serialized format.</exception>
         /// <remarks>
         /// The contents of the returned <see cref="JsonWebToken"/> have not been validated, the JSON Web Token is simply decoded. Validation can be accomplished using the validation methods in <see cref="JsonWebTokenHandler"/>
@@ -59,11 +59,11 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
             while ((next = jwtEncodedString.IndexOf('.', next + 1)) != -1)
             {
                 count++;
-                if (count > 2)
+                if (count >= JwtConstants.JwsSegmentCount)
                     break;
             }
 
-            // JWS or JWE
+            // JWS
             if (count == JwtConstants.JwsSegmentCount)
             {
                 var tokenParts = jwtEncodedString.Split('.');
@@ -130,25 +130,25 @@ namespace Microsoft.IdentityModel.Tokens.Jwt
                 string issuer = this.Issuer ?? ClaimsIdentity.DefaultIssuer;
 
                 // there is some code redundancy here that was not factored as this is a high use method. Each identity received from the host will pass through here.
-                foreach (var jObject in Payload)
+                foreach (var entry in Payload)
                 {
-                    if (jObject.Value == null)
+                    if (entry.Value == null)
                     {
-                        claims.Add(new Claim(jObject.Key, string.Empty, JsonClaimValueTypes.JsonNull, issuer, issuer));
+                        claims.Add(new Claim(entry.Key, string.Empty, JsonClaimValueTypes.JsonNull, issuer, issuer));
                         continue;
                     }
 
-                    if (jObject.Value.Type is JTokenType.String)
+                    if (entry.Value.Type is JTokenType.String)
                     {
-                        var claimValue = jObject.Value.ToObject<string>();
-                        claims.Add(new Claim(jObject.Key, claimValue, ClaimValueTypes.String, issuer, issuer));
+                        var claimValue = entry.Value.ToObject<string>();
+                        claims.Add(new Claim(entry.Key, claimValue, ClaimValueTypes.String, issuer, issuer));
                         continue;
                     }
 
-                    var jtoken = jObject.Value;
+                    var jtoken = entry.Value;
                     if (jtoken != null)
                     {
-                        AddClaimsFromJToken(claims, jObject.Key, jtoken, issuer);
+                        AddClaimsFromJToken(claims, entry.Key, jtoken, issuer);
                         continue;
                     }
 

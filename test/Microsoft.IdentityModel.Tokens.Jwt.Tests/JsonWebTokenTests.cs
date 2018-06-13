@@ -60,5 +60,13 @@ namespace Microsoft.IdentityModel.Tokens.Jwt.Tests
             IdentityComparer.AreEqual(jsonWebToken.Audiences, jwtSecurityToken.Audiences, context);
             TestUtilities.AssertFailIfErrors(context);
         }
+
+        // Time values can be floats, ints, strings, or lists of the previous three types.
+        // This test checks to make sure that parsing does not fault in any of the above cases.
+        [Fact]
+        public void ParseTimeValues()
+        {
+
+        }
     }
 }
